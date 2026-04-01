@@ -1,0 +1,25 @@
+# Python kesh fayllari
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual muhit (venv)
+venv/
+env/
+ENV/
+.venv/
+
+# VS Code sozlamalari (shaxsiy editor sozlamalari)
+.vscode/
+.history/
+
+# Ma'lumotlar bazasi (SQLite ishlatayotgan bo'lsangiz)
+*.db
+*.sqlite3
+
+# Maxfiy ma'lumotlar (Tokenlar va parollar)
+.env
+
+# Operatsion tizim fayllari
+.DS_Store
+Thumbs.db

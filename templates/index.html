@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bank Navbat Tizimi</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">B</div>
+  <div class="header-title">
+    <h1>Bank Navbat</h1>
+    <p>Elektron navbat tizimi</p>
+  </div>
+</header>
+
+<main>
+  <p class="page-label">Xizmat</p>
+  <h2>Navbat oling</h2>
+  <p class="subtitle">Filial va xizmat turini tanlang — chipta raqamingiz darhol tayyor bo'ladi.</p>
+
+  <div class="form-card">
+    <div class="form-group">
+      <label for="branch">Filial</label>
+      <select id="branch">
+        <option value="">— Filial tanlang —</option>
+        {% for branch in branches %}
+        <option value="{{ branch.id }}">{{ branch.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="service">Xizmat turi</label>
+      <select id="service">
+        <option value="">— Xizmat tanlang —</option>
+        {% for service in services %}
+        <option value="{{ service.id }}">{{ service.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="btn-primary" id="getTicketBtn" onclick="getTicket()">Navbat olish</button>
+
+    <div class="ticket-result" id="ticketResult">
+      <div class="ticket-header">
+        <span>Chipta raqami</span>
+        <strong id="ticketNumber">—</strong>
+      </div>
+      <div class="ticket-body">
+        <div class="ticket-item">
+          <label>Filial</label>
+          <p id="ticketBranch">—</p>
+        </div>
+        <div class="ticket-item">
+          <label>Xizmat</label>
+          <p id="ticketService">—</p>
+        </div>
+        <div class="ticket-item highlight">
+          <label>Navbat o'rni</label>
+          <p id="ticketPosition">—</p>
+        </div>
+        <div class="ticket-item">
+          <label>Taxminiy kutish</label>
+          <p id="ticketWait">—</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider">Holat tekshirish</div>
+
+  <div class="form-card">
+    <label for="statusInput">Chipta raqami</label>
+    <div class="status-row" style="margin-top:0.5rem">
+      <input class="status-input" id="statusInput" type="text" placeholder="Masalan: A-247"/>
+      <button class="btn-secondary" onclick="checkStatus()">Tekshirish</button>
+    </div>
+
+    <div class="status-result" id="statusResult">
+      <div id="statusMessage"></div>
+      <div class="status-grid" id="statusGrid"></div>
+    </div>
+  </div>
+</main>
+
+<footer>© 2025 Bank Navbat Tizimi &nbsp;·&nbsp; Barcha huquqlar himoyalangan</footer>
+
+<script>
+  async function getTicket() {
+    const branchId = document.getElementById('branch').value;
+    const serviceId = document.getElementById('service').value;
+    if (!branchId || !serviceId) {
+      alert('Iltimos, filial va xizmat turini tanlang.');
+      return;
+    }
+    const btn = document.getElementById('getTicketBtn');
+    btn.disabled = true;
+    btn.textContent = 'Yaratilmoqda...';
+
+    try {
+      const res = await fetch('/api/ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch_id: parseInt(branchId), service_id: parseInt(serviceId) })
+      });
+      const data = await res.json();
+      if (data.error) { alert(data.error); return; }
+
+      document.getElementById('ticketNumber').textContent = data.ticket_number;
+      document.getElementById('ticketBranch').textContent = data.branch;
+      document.getElementById('ticketService').textContent = data.service;
+      document.getElementById('ticketPosition').textContent = data.queue_position + '-navbat';
+      document.getElementById('ticketWait').textContent = '~' + data.estimated_wait + ' daqiqa';
+
+      const result = document.getElementById('ticketResult');
+      result.style.display = 'block';
+    } catch(e) {
+      alert('Xatolik yuz berdi. Qayta urinib ko\'ring.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Navbat olish';
+    }
+  }
+
+  async function checkStatus() {
+    const num = document.getElementById('statusInput').value.trim().toUpperCase();
+    if (!num) return;
+
+    const box = document.getElementById('statusResult');
+    const msg = document.getElementById('statusMessage');
+    const grid = document.getElementById('statusGrid');
+
+    try {
+      const res = await fetch(`/api/status/${num}`);
+      const data = await res.json();
+
+      if (data.error) {
+        box.className = 'status-result error';
+        msg.innerHTML = `<strong>${data.error}</strong>`;
+        grid.innerHTML = '';
+      } else {
+        const statusLabel = { waiting: 'Kutmoqda', called: 'Chaqirildi', done: 'Tugadi' }[data.status] || data.status;
+        box.className = 'status-result';
+        msg.innerHTML = `<strong>${data.ticket_number}</strong> — ${statusLabel}`;
+        grid.innerHTML = `
+          <div class="status-field"><label>Filial</label><p>${data.branch}</p></div>
+          <div class="status-field"><label>Xizmat</label><p>${data.service}</p></div>
+          <div class="status-field"><label>Navbat o'rni</label><p>${data.queue_position}</p></div>
+          <div class="status-field"><label>Taxminiy kutish</label><p>~${data.estimated_wait} daq.</p></div>
+        `;
+      }
+      box.style.display = 'block';
+    } catch(e) {
+      box.className = 'status-result error';
+      msg.innerHTML = '<strong>Xatolik yuz berdi.</strong>';
+      grid.innerHTML = '';
+      box.style.display = 'block';
+    }
+  }
+
+  document.getElementById('statusInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkStatus();
+  });
+</script>
+</body>
+</html>
