@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Admin Paneli</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .status-waiting { color: orange; font-weight: bold; }
+        .status-completed { color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bank Navbatlari Nazorati</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Chipta raqami</th>
+                    <th>Xizmat turi</th>
+                    <th>Vaqti</th>
+                    <th>Holati</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td><strong>{{ ticket.ticket_number }}</strong></td>
+                    <td>{{ ticket.service_type }}</td>
+                    <td>{{ ticket.created_at.strftime('%H:%M') }}</td>
+                    <td class="status-{{ ticket.status }}">{{ ticket.status }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from .database import db
 from .models import Branch, Service, Ticket
+
 
 main = Blueprint('main', __name__)
 
@@ -9,6 +10,20 @@ def index():
     branches = Branch.query.all()
     services = Service.query.all()
     return render_template('index.html', branches=branches, services=services)
+
+@main.route('/admin-panel')
+def admin_panel():
+    # Bazadagi barcha chiptalarni vaqt bo'yicha saralab olish
+    all_tickets = Ticket.query.order_by(Ticket.created_at.desc()).all()
+    return render_template('admin.html', tickets=all_tickets)
+
+@main.route('/complete-ticket/<int:ticket_id>')
+def complete_ticket(ticket_id):
+    # Chipta holatini o'zgartirish tugmasi uchun
+    ticket = Ticket.query.get_or_404(ticket_id)
+    ticket.status = 'completed'
+    db.session.commit()
+    return redirect(url_for('admin_panel'))
 
 @main.route('/api/ticket', methods=['POST'])
 def create_ticket():
